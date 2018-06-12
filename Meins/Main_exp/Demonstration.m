@@ -3,7 +3,7 @@ KbName('UnifyKeyNames');
 corrKey = [32];
 spaceKey = KbName('space');
 escKey = KbName('escape');
-twait = 3;
+twait = ITI;
 activeKeys = [KbName('space') KbName('escape')];
 m = 1;
 
@@ -39,15 +39,13 @@ DrawFormattedText(window, instructionText, 'center', ...
 Screen('Flip', window);
 KbStrokeWait;
 
-for j = 1:nBlocks
+
     while m < 3
         
-        rise = (0:sound.fs/5)/(sound.fs/5);
-        Env = [rise  ones(1,(sound.dur*sound.fs-2*length(rise)))  fliplr(rise)];
-        wave.tact = (sin(2.*pi.*sound.freq(m)* [0:1/sound.fs:sound.dur-1/sound.fs])).* Env;
-        wave.tact = [wave.tact;wave.tact];
+        wave = createSound(sound.fs,sound.dur, sound.freq(m), TrialParamsRand(i,4), sound.break);
+        sound.tact = [wave; wave];
         
-        PsychPortAudio('FillBuffer', pahandle, wave.tact);             % this takes less than 1 ms
+        PsychPortAudio('FillBuffer', pahandle, sound.tact);             % this takes less than 1 ms
         
         Screen('FillRect',window, Color.back);
         DrawFormattedText(window,'+','center','center', Color.fix);      % present fixation cross
@@ -70,14 +68,12 @@ for j = 1:nBlocks
         
     end
         
-    for i = 1:length(TrialParamsRand)
+for i = 1:length(TrialParamsRand)
         
-        rise = [0:sound.fs/5]/(sound.fs/5);
-        Env = [rise  ones(1,(sound.dur*sound.fs-2*length(rise)))  fliplr(rise)];
-        wave.tact = (sin(2.*pi.*sound.freq(TrialParamsRand(i,1))* [0:1/sound.fs:sound.dur-1/sound.fs])).* Env;
-        wave.tact = [wave.tact;wave.tact];
+        wave = createSound(sound.fs,sound.dur, sound.freq(TrialParamsRand(i,1)), TrialParamsRand(i,4), sound.break);
+        sound.tact = [wave; wave];
         
-        PsychPortAudio('FillBuffer', pahandle, wave.tact);             % this takes less than 1 ms
+        PsychPortAudio('FillBuffer', pahandle, sound.tact);             % this takes less than 1 ms
         
         Screen('FillRect',window, Color.back);
         DrawFormattedText(window,'+','center','center', Color.fix);      % present fixation cross
@@ -150,11 +146,16 @@ for j = 1:nBlocks
     keypressed = 0; 
     
     WaitSecs(ITI);
-    
-    
+    if mod(i,25) == 0
+        DrawFormattedText(window, ['Ende Blocknr.' num2str(i)], 'center', ...
+    'center', Color.text,30);
+    Screen('Flip', window);
+    KbWait;
     end
- KbWait;     
+    
 end
+         
+
 
 % if the wait for presses is in a loop, 
 % then the following two commands should come after the loop finishes
@@ -165,5 +166,4 @@ RestrictKeysForKbCheck;
 % CTRL-C will reenable keyboard input
 ListenChar(1)
 PsychPortAudio('Close',pahandle);
-
 KbWait;   

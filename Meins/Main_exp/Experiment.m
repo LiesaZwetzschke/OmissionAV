@@ -14,20 +14,16 @@ KbStrokeWait;
 % Screen('Flip', window);
 
 
-exit=0;
-trial = 1
 
-for i = 1:nBlocks
-    while trial <= length(TrialParamsRand) && exit == 0;
+for j = 1:nBlocks
+    for i = 1:length(TrialParamsRand)
         
         pahandle = PsychPortAudio('Open', [], [], 0, sound.fs, sound.nrchannels);
 
-        rise = [0:sound.fs/5]/(sound.fs/5);
-        Env = [rise  ones(1,(sound.dur*sound.fs-2*length(rise)))  fliplr(rise)];
-        wave.tact = (sin(2.*pi.*sound.freq(TrialParamsRand(i,1))* [0:1/sound.fs:sound.dur-1/sound.fs])).* Env;
-        wave.tact = [wave.tact;wave.tact];
+        wave = createSound(sound.fs,sound.dur, sound.freq(TrialParamsRand(i,1)), TrialParamsRand(i,4), sound.break);
+        sound.tact = [wave; wave];
         
-        PsychPortAudio('FillBuffer', pahandle, wave.tact);             % this takes less than 1 ms
+        PsychPortAudio('FillBuffer', pahandle, sound.tact);             % this takes less than 1 ms
         
         Screen('FillRect',window, Color.back);
         DrawFormattedText(window,'+','center','center', Color.fix);      % present fixation cross
@@ -52,19 +48,16 @@ for i = 1:nBlocks
                         DrawFormattedText(window, 'Nein',...
                             screenWidth/4*3,screenHeight/2 + 50,Color.text);
         Screen('Flip', window);
-        
-        
-        [~,keyCode]=KbStrokeWait;
-        if strcmp(KbName(keyCode), 'ESCAPE')
-           exit=1;
-        end
-        trial=trial+1;
+      
+       
     end
-    
-    KbWait;   
+    DrawFormattedText(window, ['Ende Blocknr.' num2str(j)], 'center', ...
+    'center', Color.text,30);
+    Screen('Flip', window);
+    KbWait; 
 end
-
-
+    
+ 
 %% final screen
 PsychPortAudio('Close',pahandle);
 Screen('Flip',window);

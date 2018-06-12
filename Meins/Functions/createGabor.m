@@ -1,12 +1,13 @@
 function [y] = createGabor(duration, window, position, rSize, cycles, ifi, angle, contrast)
 
 % Default arguments
-if nargin<7 || isempty(angle)
+if nargin<7 || isempty(angle) || angle ==1
     angle = 90;
 end
 if nargin<8 || isempty(contrast)
     contrast = 1;
 end
+
 
 nFrames = duration/ifi;
 
@@ -16,7 +17,7 @@ crossColor = [255 255 255];
 
 % Sigma of Gaussian
 sigma = rSize / 7;
-radius = rSize/2
+radius = rSize/2;
 
 % Obvious Parameters
 %angle = 90;  
@@ -28,7 +29,7 @@ phase = 0;
 freq = cycles / rSize;
 
 backgroundOffset = [0.5 0.5 0.5 0];
-disableNorm = 1;
+%disableNorm = 1;
 contrastPreMultiplicator = 0.5;
 
 
@@ -47,7 +48,7 @@ topPriorityLevel = MaxPriority(window);
 Priority(topPriorityLevel);
 vbl = Screen('Flip', window);
 
-for t = 1:nFrames;
+for t = 1:nFrames
     
     % Create gabor and fixation cross
     Screen('FillRect', window, [127 127 127]);
@@ -57,12 +58,10 @@ for t = 1:nFrames;
     
     Screen('DrawingFinished', window);
     vbl = Screen('Flip', window, vbl + ifi/2);
-    t = t+1;
+    
 end
 
 
 Priority(0);
 
 end
-
-

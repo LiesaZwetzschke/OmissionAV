@@ -21,6 +21,7 @@ if Demo == 1
     Modality = 3;
 else
     Modality = input(['1-Auditory:, 2-Visual:, 3-Bimodal: '])
+   
 end
 
 %% General settings
@@ -30,6 +31,8 @@ Color.back = [0 0 0];
 Color.fix = [255 255 255];
 Color.text = [255 255 255];
 Color.gray = [127 127 127];
+Color.grid = [255 255 255 0.9; %added grid color for unisensory condition 11/06/18
+              255 0 0 1];
 
 %%% Stimuli configuration
 sound.dur = 1.25;
@@ -37,6 +40,7 @@ sound.freq = [200 600];
 sound.fs = 44100;
 sound.volum = 1;
 sound.nrchannels = 2;
+sound.break = 0.2;
 
 visual.dur = 0.5;
 visual.pos = [480 300; 
@@ -52,13 +56,13 @@ visual.cycles = 5;
 
 TrialParams = [1 0 0 0 100; % Auditory only
     2 0 0 0 200;
-    1 0 0 1 1001;
-    2 0 0 1 2001;
+    1 0 0 1 101;
+    2 0 0 1 201;
     % Visual only
     0 1 0 0 10;
     0 2 0 0 20;
-    0 3 0 1 30;
-    0 4 0 1 40;
+    0 1 0 1 11;
+    0 2 0 1 21;
     % bimodal
     1 1 0 0 110;
     1 2 0 0 120;
@@ -69,8 +73,8 @@ TrialParams = [1 0 0 0 100; % Auditory only
     2 3 0 0 230;
     2 4 0 0 240;
     %omission
-    1 0 1 0 101;
-    2 0 1 0 201];
+    1 0 1 0 1;
+    2 0 1 0 2];
 
 %% Select standardposition
 
@@ -103,7 +107,7 @@ if Demo ~= 1 && Modality ~= 2
 elseif Demo ~= 1 && Modality == 1
     nBlocks = 2;
 else
-    nBlocks = 2; %%%%%HIER NOCHMAL NACHDENKEN WEGEN DEMO
+    nBlocks = 5; %%%%%HIER NOCHMAL NACHDENKEN WEGEN DEMO
 end
 
 switch Modality
@@ -137,7 +141,7 @@ elseif Demo ~= 1 && Modality == 3
         repmat(TrialParams([10:13,15:16],:),Nreps.target,1);...
         repmat(TrialParams(17:18,:), Nreps.omis,1)];
 elseif Demo == 1
-    TrialParamsRand = [repmat(TrialParams(9:18,:), Nreps.demo,1)];
+    TrialParamsRand = repmat(TrialParams(9:18,:), Nreps.demo,1);
 end
        
 % randomize the order of trials
@@ -166,15 +170,8 @@ InitializePsychSound;
 pahandle = PsychPortAudio('Open', [], [], 0, sound.fs, sound.nrchannels);
 
 
-if Demo == 1
-    DrawFormattedText(window, ...
-        'Übung',...
-        'center', 'center',Color.text);
-else
-    DrawFormattedText(window, ...
-        'Experiment',...
-        'center', 'center',Color.text);
-end         
+DrawFormattedText(window, 'Bitte warten','center', 'center',Color.text);
+         
 Screen('Flip',window);
 
 
@@ -187,7 +184,7 @@ vbl = Screen('Flip', window);
 if Demo ~= 1 && Modality == 3
     run Experiment.m;
 elseif Demo ~= 1 && Modality ~= 3
-    run UniExperiment
+    run UniExperiment.m
 else
     run Demonstration.m
 end
@@ -213,8 +210,5 @@ end
 
 
 sca;
-
-
-
 
 
