@@ -1,11 +1,19 @@
 %%% Run Experiment Omission AV %%%
 
+
+
 % Clear the workspace and the screen
 close all;
 clearvars;
 
+% Randomize clock
+rand('state', sum(100*clock));
+
+
+try
 % Where to save data
 saveplace = 'C:\Users\Liesa\Desktop\Marlene_script\Meins\Data';
+toSave = ["data",'answer', 'sound', 'visual', 'standardposition', 'rareposition', 'TrialParamsRand'];
 
 % Participant info
 Demo = input(['Demo?, 1-Yes: , 2-No:'])
@@ -25,14 +33,14 @@ else
 end
 
 %% General settings
-ITI = 1.5;
+ITI = 1;
 %%% window configurations
 Color.back = [0 0 0];
 Color.fix = [255 255 255];
 Color.text = [255 255 255];
-Color.gray = [127 127 127];
-Color.grid = [255 255 255 0.9; %added grid color for unisensory condition 11/06/18
-              255 0 0 1];
+Color.gray = [60 60 60];
+Color.grid = [255 0 0 1];
+
 
 %%% Stimuli configuration
 sound.dur = 1.25;
@@ -49,32 +57,39 @@ visual.pos = [480 300;
             1440 900];
 visual.rSize = 150;
 visual.cycles = 5;
+visual.angle = [90 0];
+
+% Prep for gabor
+freq = visual.cycles/visual.rSize;
+sigma = visual.rSize/7;
+propertiesMat = [0, freq, sigma, 1, 1, 0, 0, 0];
+%[phase, freq, sigma, contrast, aspectRatio, 0, 0, 0]
 
 %% Trial parameter
-% Auditory freq. || visual position || omission || catch-trial || trigger
+% Auditory freq. || visual position || omission || catch-trial(1 = no, 2 = yes) || trigger
 
 
-TrialParams = [1 0 0 0 100; % Auditory only
-    2 0 0 0 200;
-    1 0 0 1 101;
+TrialParams = [1 0 0 1 101; % Auditory only
     2 0 0 1 201;
+    1 0 0 2 102;
+    2 0 0 2 202;
     % Visual only
-    0 1 0 0 10;
-    0 2 0 0 20;
-    0 1 0 1 11;
-    0 2 0 1 21;
+    0 1 0 1 10;
+    0 2 0 1 20;
+    0 1 0 2 12;
+    0 2 0 2 22;
     % bimodal
-    1 1 0 0 110;
-    1 2 0 0 120;
-    1 3 0 0 130;
-    1 4 0 0 140;
-    2 1 0 0 210;
-    2 2 0 0 220;
-    2 3 0 0 230;
-    2 4 0 0 240;
+    1 1 0 1 110;
+    1 2 0 1 120;
+    1 3 0 1 130;
+    1 4 0 1 140;
+    2 1 0 1 210;
+    2 2 0 1 220;
+    2 3 0 1 230;
+    2 4 0 1 240;
     %omission
-    1 0 1 0 1;
-    2 0 1 0 2];
+    1 0 1 1 1;
+    2 0 1 1 2];
 
 %% Select standardposition
 
@@ -96,19 +111,12 @@ end
 % bimodal, 2 for uniA)
 
 Nreps.uni = 50;      % 2/4 time (A1,2 or V1,2,3,4)
-Nreps.stan = 105;     % 2 times (A1V1, A2V2)
-Nreps.target = 6;    % 6 times (A1V2,3,4 A2V1,3,4)
-Nreps.omis = 27;      % 2 times (A1V- A2V-)
+Nreps.catch = 10;     % 2/4 times (catch)
+Nreps.stan = 420;     % 2 times (A1V1, A2V2)
+Nreps.target = 24;    % 6 times (A1V2,3,4 A2V1,3,4)
+Nreps.omis = 108;      % 2 times (A1V- A2V-)
 Nreps.demo = 10;      % 10 times (possible stimuli combis in the experiment)
 
-% nBlocks
-if Demo ~= 1 && Modality ~= 2
-    nBlocks = 4;
-elseif Demo ~= 1 && Modality == 1
-    nBlocks = 2;
-else
-    nBlocks = 5; %%%%%HIER NOCHMAL NACHDENKEN WEGEN DEMO
-end
 
 switch Modality
     case 1 %auditory only
@@ -118,6 +126,7 @@ switch Modality
     case 2 %visual only
         Aud = 0;
         Vis = 1;
+        visual.pos = [standardposition; rareposition];
         Filename = ('VisualOnly');
     case 3 %bimodal
         Aud = 1;
@@ -133,9 +142,11 @@ TrialParamsRand = [];
 
 
 if Demo ~= 1 && Modality == 1
-    TrialParamsRand = repmat(TrialParams(1:4,:),Nreps.uni,1);
+    TrialParamsRand = [repmat(TrialParams(1:2,:),Nreps.uni,1);...
+        repmat(TrialParams(3:4,:),Nreps.catch,1)];
 elseif Demo ~= 1 && Modality == 2
-    TrialParamsRand = repmat(TrialParams(5:8,:), Nreps.uni,1);
+    TrialParamsRand = [repmat(TrialParams(5:6,:), Nreps.uni,1);...
+        repmat(TrialParams(7:8,:), Nreps.catch,1)];
 elseif Demo ~= 1 && Modality == 3
     TrialParamsRand = [repmat(TrialParams([9, 14],:), Nreps.stan,1);...
         repmat(TrialParams([10:13,15:16],:),Nreps.target,1);...
@@ -143,10 +154,13 @@ elseif Demo ~= 1 && Modality == 3
 elseif Demo == 1
     TrialParamsRand = repmat(TrialParams(9:18,:), Nreps.demo,1);
 end
+
        
 % randomize the order of trials
 TrialParamsRand = TrialParamsRand(randperm(size(TrialParamsRand,1)),:);
 
+%%% HOW TO RANDOMIZE BUT DON'T REPEAT 2???
+            
 
 % Set the screen number to the external secondary monitor if there is one
 % connected
@@ -163,12 +177,26 @@ ifi = Screen('GetFlipInterval', window);
 
 screenWidth = windowRect(3) - windowRect(1);
 screenHeight = windowRect(4) - windowRect(2);
-Screen(window,'TextSize',30);
 
-% Initialize sound
+%% create Gabor patches
+for i = 1: length(visual.pos)
+    [gaborid, desRect] = createGabor(window, visual.pos(i,:,:), visual.rSize);
+    visual.gabor(i,:) = [gaborid, desRect];
+end
+
+%% Initialize sound
 InitializePsychSound;
 pahandle = PsychPortAudio('Open', [], [], 0, sound.fs, sound.nrchannels);
 
+%% create Sounds
+for i = 1:length(sound.freq)
+    [wave] = createSound(sound.fs,sound.dur, sound.freq(i), 1);
+    sound.tact(:,:,i) = [wave; wave];
+end
+for i = 1:length(sound.freq)
+    [wavebr] = createSound(sound.fs,sound.dur, sound.freq(i), 2, sound.break);
+    sound.tact(:,:,i+2) = [wavebr; wavebr];
+end
 
 DrawFormattedText(window, 'Bitte warten','center', 'center',Color.text);
          
@@ -192,23 +220,40 @@ end
 
 %% prepare the end of the experiment
 
-DrawFormattedText(window, 'ENDE','center','center',Color.back);
+DrawFormattedText(window, 'ENDE','center','center',Color.text);
 Screen('Flip',window);
 
 if Demo ~=1
     if Modality == 1
-        save([saveplace, num2str(VPno),FileName,'.mat'])
+        save(fullfile(saveplace, ['VP', num2str(VPno),Filename,datestr(now,'DDmmYY'),'.mat']),...
+            'data','answer', 'sound', 'visual', 'standardposition', 'rareposition', 'TrialParamsRand')
     elseif Modality == 2
-        save([saveplace, num2str(VPno),FileName,'.mat'])
-    elseif Pract == 3
-        save([saveplace, num2str(VPno),FileName,'.mat'])
+        save(fullfile(saveplace, ['VP', num2str(VPno),Filename,datestr(now,'DDmmYY'),'.mat']),...
+            'data','answer', 'sound', 'visual', 'standardposition', 'rareposition', 'TrialParamsRand')
+    elseif Modality == 3
+        save(fullfile(saveplace, ['VP', num2str(VPno),Filename,datestr(now,'DDmmYY'),'.mat']),...
+            'data','answer', 'sound', 'visual', 'standardposition', 'rareposition', 'TrialParamsRand')
     end
 else
-    save([saveplace, num2str(VPno),'Demo','.mat'])
+    save(fullfile(saveplace, ['VP', num2str(VPno),'Demo',datestr(now,'DDmmYY'),'.mat']),...
+        'data','answer', 'sound', 'visual', 'standardposition', 'rareposition', 'TrialParamsRand') 
 end
 
 
+KbWait;
 
 sca;
-
+catch ME
+   disp(ME);
+   % disp(MExc.stack.file);
+   %cd([cd, '\skripts\main experiment\' ])
+   PsychPortAudio('Close',pahandle);
+   %ShowCursor;
+   sca; 
+   ME.message
+   ME.stack.name
+   ME.stack.line
+   save('error.mat', 'ME')
+   error('Oops somethint wrong, s. above');
+end
 

@@ -42,56 +42,85 @@ KbStrokeWait;
 
     while m < 3
         
-        wave = createSound(sound.fs,sound.dur, sound.freq(m), TrialParamsRand(i,4), sound.break);
-        sound.tact = [wave; wave];
+        Screen('FillRect', window, Color.back);
+        DrawFormattedText(window, ['Standardposition ', num2str(m)],...
+                            'center', 'center', Color.text);
+        Screen('Flip',window);               
+        KbWait;
         
-        PsychPortAudio('FillBuffer', pahandle, sound.tact);             % this takes less than 1 ms
-        
+        PsychPortAudio('FillBuffer', pahandle, sound.tact(:,:,m));             % this takes less than 1 ms
+               
         Screen('FillRect',window, Color.back);
+        Screen(window,'TextSize',50);
         DrawFormattedText(window,'+','center','center', Color.fix);      % present fixation cross
         
-        PsychPortAudio('Start', pahandle, 0,0,0); 
+        PsychPortAudio('Start', pahandle, 1,0,0); 
         Screen('Flip',window);
         WaitSecs(0.75);
                
-        createGabor(visual.dur, window, visual.pos(m,:), visual.rSize, visual.cycles, ifi);
+        Screen('FillRect', window, Color.gray);
+        Screen('DrawTexture', window, visual.gabor(m),[] ,...
+                    visual.gabor(m,2:5), visual.angle(1),...
+                    [],[],[],[],[],propertiesMat);
+        DrawFormattedText(window,'+','center','center',Color.fix);
+        Screen('DrawingFinished', window);
+        Screen('Flip', window);
+                
+        WaitSecs(0.49);
         
         PsychPortAudio('Stop', pahandle);
         
-        
-        Screen('FillRect', window, Color.back);
-        DrawFormattedText(window, ['Standardposition', num2str(m)],...
-                            'center', 'center', Color.text);
-        Screen('Flip', window);
         m = m+1;
-        KbWait;
         
     end
-        
+
+    k = 1;
 for i = 1:length(TrialParamsRand)
+    if i ==1
+        Screen('FillRect',window, Color.back);
+        DrawFormattedText(window,'Bereit?','center','center', Color.fix);
+        Screen('Flip',window);
+        KbWait;
+    end
+    
+        Screen('FillRect',window, Color.back);
+        Screen(window,'TextSize',50);
+        DrawFormattedText(window,'+','center','center', Color.fix);      % present fixation cross
+        Screen('Flip',window);
+        WaitSecs(ITI);
         
-        wave = createSound(sound.fs,sound.dur, sound.freq(TrialParamsRand(i,1)), TrialParamsRand(i,4), sound.break);
-        sound.tact = [wave; wave];
         
-        PsychPortAudio('FillBuffer', pahandle, sound.tact);             % this takes less than 1 ms
+        
+        PsychPortAudio('FillBuffer', pahandle, sound.tact(:,:,TrialParamsRand(i,1)));             % this takes less than 1 ms
         
         Screen('FillRect',window, Color.back);
+        Screen(window,'TextSize',50);
         DrawFormattedText(window,'+','center','center', Color.fix);      % present fixation cross
-        
-        PsychPortAudio('Start', pahandle, 0,0,0); 
+        PsychPortAudio('Start', pahandle, 1,0,0);
         Screen('Flip',window);
-        WaitSecs(0.75);
         
-        if TrialParamsRand(i,2) ~= 0
-            createGabor(visual.dur, window, visual.pos(TrialParamsRand(i,2),:), visual.rSize, visual.cycles, ifi);
-        else
-            backflip(window, visual.dur, Color.gray, Color.text, ifi)
+        WaitSecs(0.73);
+                
+        Screen('FillRect', window, Color.gray);
+        if TrialParamsRand(i,2)~=0
+            Screen('DrawTexture', window, visual.gabor(TrialParamsRand(i,2)),[] ,...
+                    visual.gabor(TrialParamsRand(i,2),2:5), visual.angle(TrialParamsRand(i,4)),...
+                    [],[],[],[],[],propertiesMat);
         end
+        DrawFormattedText(window,'+','center','center',Color.fix);
+        Screen('DrawingFinished', window);
+        Screen('Flip', window);
+                
+        WaitSecs(0.49);
+                
+
+        
         PsychPortAudio('Stop', pahandle);
         
         
         Screen('FillRect', window, Color.back);
-        DrawFormattedText(window, 'Zielkombination?',...
+        Screen(window,'TextSize',50);
+        DrawFormattedText(window, '?',...
                             'center', 'center', Color.text);
         Screen('Flip', window);
         tStart = GetSecs;
@@ -131,25 +160,30 @@ for i = 1:length(TrialParamsRand)
          end
          if keypressed == 0 && answer(i)==1 || keypressed == corrKey(1) && answer(i)==2 % pressed key correct or not
              rsp.corr=1;
-             DrawFormattedText(window, 'Korrekt!', 'center', 'center', Color.text);
+             DrawFormattedText(window, 'Korrekt!', 'center', 'center', Color.back); %black letters
              Screen('Flip', window);
          else
              rsp.corr=0;
-             DrawFormattedText(window, 'Falsch!', 'center', 'center', Color.text);
+             DrawFormattedText(window, '!', 'center', 'center', Color.text);
              Screen('Flip', window);
          end
-          
+    
+    WaitSecs(ITI/2);
+         
     data.demo.trial(i) = i;
     data.demo.keyCode(i) = rsp.keyCode;
     data.demo.keyName{i} = rsp.keyName;
     data.demo.corr(i) = rsp.corr;
+    data.demo.ans = answer;
     keypressed = 0; 
     
-    WaitSecs(ITI);
+    
     if mod(i,25) == 0
-        DrawFormattedText(window, ['Ende Blocknr.' num2str(i)], 'center', ...
+        DrawFormattedText(window, ['Ende Trialnr. ' num2str(i)], 'center', ...
     'center', Color.text,30);
     Screen('Flip', window);
+    disp(['MEAN CORRECT ' num2str(sum(data.demo.corr(1+(i-i*(1/k)):i))/i)]);
+    k = k+1;
     KbWait;
     end
     
@@ -166,4 +200,4 @@ RestrictKeysForKbCheck;
 % CTRL-C will reenable keyboard input
 ListenChar(1)
 PsychPortAudio('Close',pahandle);
-KbWait;   
+

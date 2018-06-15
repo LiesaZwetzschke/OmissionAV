@@ -13,7 +13,7 @@ ListenChar(2);
 
 answer = [];
 for k = 1: length(TrialParamsRand)
-    if TrialParamsRand(k,4,:) == 1
+    if TrialParamsRand(k,4) == 1
         answer(k,1) = 1;
     else
         answer(k,1) = 2;
@@ -41,44 +41,66 @@ KbStrokeWait;
 
 
 for i = 1:length(TrialParamsRand)
+    
+        Screen('FillRect',window, Color.back);
+        Screen(window,'TextSize',50);
+        DrawFormattedText(window,'+','center','center', Color.fix);      % present fixation cross
+        Screen('Flip', window);
+        WaitSecs(ITI);
         
         switch Modality
             case 1
-                pahandle = PsychPortAudio('Open', [], [], 0, sound.fs, sound.nrchannels); 
-        
-           
-                wave = createSound(sound.fs,sound.dur, sound.freq(TrialParamsRand(i,1)), TrialParamsRand(i,4), sound.break);
-                sound.tact = [wave; wave];
-        
-                PsychPortAudio('FillBuffer', pahandle, sound.tact);             % this takes less than 1 ms
-        
+                if TrialParamsRand(i,4)==1
+                    PsychPortAudio('FillBuffer', pahandle, sound.tact(:,:,TrialParamsRand(i,1))); % this takes less than 1 ms
+                else
+                    PsychPortAudio('FillBuffer', pahandle, sound.tact(:,:,TrialParamsRand(i,1)+2));
+                end
+                
                 Screen('FillRect',window, Color.back);
+                Screen(window,'TextSize',50);
                 DrawFormattedText(window,'+','center','center', Color.fix);      % present fixation cross
-                
-                PsychPortAudio('Start', pahandle, 0,0,0); 
+                PsychPortAudio('Start', pahandle, 1,0,0);
                 Screen('Flip',window);
-                WaitSecs(0.65);
                 
-                backflip(window, visual.dur, Color.gray, Color.text, ifi);
+                WaitSecs(0.73);
+                
+                Screen('FillRect', window, Color.gray);
+                DrawFormattedText(window,'+','center','center',Color.fix);
+                Screen('Flip', window);
+                
+                WaitSecs(0.49);
                 
                 PsychPortAudio('Stop', pahandle);
                 
                          
             case 2
+                
                 Screen('FillRect',window, Color.back);
+                Screen(window,'TextSize',50);
                 DrawFormattedText(window,'+','center','center', Color.fix);      % present fixation cross
-
+                
                 Screen('Flip',window);
-                WaitSecs(0.75);
-
-                createGabor(visual.dur, window, visual.pos(TrialParamsRand(i,2),:), visual.rSize, visual.cycles,...
-                    ifi, TrialParamsRand(i,4));
-                   
+                WaitSecs(0.73);
                
+                Screen('FillRect', window, Color.gray);
+                Screen('DrawTexture', window, visual.gabor(TrialParamsRand(i,2)),[] ,...
+                    visual.gabor(TrialParamsRand(i,2),2:5), visual.angle(TrialParamsRand(i,4)),...
+                    [],[],[],[],[],propertiesMat);
+                DrawFormattedText(window,'+','center','center',Color.fix);
+                Screen('DrawingFinished', window);
+                Screen('Flip', window);
+                
+                WaitSecs(0.49);
+                
+                               
         end
+        
         Screen('FillRect', window, Color.back);
-        DrawFormattedText(window, 'Veränderung?','center', 'center', Color.text);
+        Screen(window,'TextSize',50);
+        DrawFormattedText(window, '?','center', 'center', Color.text); 
+        
         Screen('Flip', window);
+        
         tStart = GetSecs;
         
         rsp.keyCode = [];
@@ -102,7 +124,7 @@ for i = 1:length(TrialParamsRand)
                         break;
                         elseif keyCode(escKey)
                         %ShowCursor;
-                        RestrictKeysForKbCheck; ListenChar(1); Screen('CloseAll'); return
+                        RestrictKeysForKbCheck; ListenChar(1); sca; return
                         end
                     end
                 keyIsDown=0; keyCode=0;          
@@ -114,26 +136,28 @@ for i = 1:length(TrialParamsRand)
                 break;
             end
          end
-         if keypressed == 0 && answer(i)==2 || keypressed == corrKey(1) && answer(i)==1 % pressed key correct or not
+         if keypressed == 0 && answer(i)==1 || keypressed == corrKey(1) && answer(i)==2 % pressed key correct or not
              rsp.corr=1;
-             DrawFormattedText(window, 'Korrekt!', 'center', 'center', Color.text);
+             DrawFormattedText(window, 'Korrekt!', 'center', 'center', Color.back); %Black letters
              Screen('Flip', window);
          else
              rsp.corr=0;
-             DrawFormattedText(window, 'Falsch!', 'center', 'center', Color.text);
+             DrawFormattedText(window, '!', 'center', 'center', Color.text);
              Screen('Flip', window);
          end
-          
+         
+        WaitSecs(ITI/2);
+                  
         data.demo.trial(i) = i;
         data.demo.keyCode(i) = rsp.keyCode;
         data.demo.keyName{i} = rsp.keyName;
         data.demo.corr(i) = rsp.corr;
+        data.demo.ans = answer;
         keypressed = 0; 
 
-        WaitSecs(ITI);
-        
+                
         if mod(i,50) == 0
-           DrawFormattedText(window, ['Ende Blocknr.' num2str(i)], 'center', ...
+           DrawFormattedText(window, ['Ende Blocknr. ' num2str(i)], 'center', ...
                              'center', Color.text,30);
            Screen('Flip', window);
            KbWait;
@@ -142,7 +166,15 @@ for i = 1:length(TrialParamsRand)
        
 end
 
-
 PsychPortAudio('Close',pahandle);
+
+% if the wait for presses is in a loop, 
+% then the following two commands should come after the loop finishes
+% reset the keyboard input checking for all keys
+RestrictKeysForKbCheck;
+% re-enable echo to the command line for key presses
+% if code crashes before reaching this point 
+% CTRL-C will reenable keyboard input
+ListenChar(1)
 
 KbWait; 
